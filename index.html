@@ -5,55 +5,178 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Lash Therapy – Client App</title>
 <meta name="theme-color" content="#7E63C9"/>
+<link rel="manifest" href="manifest.json" />
 <style>
-  :root{--purple:#7E63C9;--soft:#F7F4FF;--text:#2B214A;--radius:22px}
-  body{margin:0;background:linear-gradient(180deg,#FBF9FF,#FFF);
-       font-family:system-ui,-apple-system,Segoe UI,Roboto;color:var(--text)}
-  .wrap{max-width:900px;margin:0 auto;padding:32px 18px 80px;text-align:center}
-  h1{font-weight:800;font-size:clamp(28px,5vw,40px);margin:6px 0}
-  .cta{display:flex;flex-direction:column;gap:14px;align-items:center;margin:20px 0}
-  .btn{background:var(--purple);color:#fff;text-decoration:none;
-       padding:14px 28px;border-radius:var(--radius);font-weight:700;
-       box-shadow:0 10px 24px rgba(126,99,201,.25);cursor:pointer}
-  .card{background:#fff;border:1px solid #EEE5FA;border-radius:20px;
-        box-shadow:0 6px 20px rgba(126,99,201,.12);padding:18px;margin-top:14px}
-  .small{color:#6a5c93;font-size:14px}
+  :root {
+    --purple:#7E63C9;
+    --light:#F7F4FF;
+    --text:#2B214A;
+    --radius:22px;
+    --green:#3A9D23;
+  }
+  body {
+    margin:0;
+    background:linear-gradient(180deg,#FBF9FF,#FFF);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto;
+    color:var(--text);
+  }
+  .wrap {
+    max-width:900px;
+    margin:0 auto;
+    padding:32px 18px 80px;
+    text-align:center;
+  }
+  h1 {
+    font-weight:800;
+    font-size:clamp(28px,5vw,40px);
+    margin:6px 0;
+  }
+  .cta {
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    align-items:center;
+    margin:20px 0;
+  }
+  .btn {
+    background:var(--purple);
+    color:#fff;
+    text-decoration:none;
+    padding:14px 28px;
+    border-radius:var(--radius);
+    font-weight:700;
+    box-shadow:0 10px 24px rgba(126,99,201,.25);
+    cursor:pointer;
+  }
+  .btn:hover { filter:brightness(1.05); }
+  .card {
+    background:#fff;
+    border:1px solid #EEE5FA;
+    border-radius:20px;
+    box-shadow:0 6px 20px rgba(126,99,201,.12);
+    padding:18px;
+    margin-top:14px;
+  }
+  .small { color:#6a5c93;font-size:14px; }
+  footer {
+    position:fixed;
+    left:0;right:0;bottom:0;
+    background:#fff;
+    border-top:2px solid #EEE6FA;
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    padding:10px;
+    z-index:10;
+  }
+  footer a {
+    color:var(--purple);
+    text-decoration:none;
+    font-weight:600;
+  }
+  footer a:hover { color:var(--green); }
 </style>
 </head>
 
 <body>
-<div class="wrap">
-  <h1>Welcome Back <span id="name">Beautiful</span> 💕</h1>
-  <div class="small" id="sub">Syncing your visits…</div>
+  <div class="wrap">
+    <h1>Welcome Back <span id="name">Beautiful</span> 💕</h1>
+    <div class="small" id="sub">Syncing your visits…</div>
 
-  <div class="cta">
-    <a id="book" class="btn" href="book.html">Book Now</a>
-    <a id="appts" class="btn" href="appointments.html">My Appointments</a>
-    <a id="prefs" class="btn" href="preferences.html">Update Preferences</a>
-  </div>
+    <div class="cta">
+      <a id="book" class="btn" href="book.html">Book Now</a>
+      <a id="appts" class="btn" href="appointments.html">My Appointments</a>
+      <a id="prefs" class="btn" href="preferences.html">Update Preferences</a>
+    </div>
 
-  <div class="card">
-    <div><b>Next:</b> <span id="next">—</span></div>
-    <div style="margin-top:6px"><b>Rewards:</b> <span id="rw">0</span> visits</div>
-  </div>
+    <div class="card">
+      <div><b>Next:</b> <span id="next">—</span></div>
+      <div style="margin-top:6px"><b>Rewards:</b> <span id="rw">0</span> visits</div>
+    </div>
 
-  <div class="card">
-    <div class="small">Add to Home Screen for 1-tap booking.</div>
-    <button id="install" style="display:none;margin-top:8px" class="btn">📲 Install App</button>
-    <div id="iosHint" class="small" style="display:none;margin-top:8px">
-      On iPhone: Share → Add to Home Screen
+    <div class="card">
+      <div class="small">
+        Not you? <a href="#" id="reset">Clear & start over</a>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="small">Not you? <a href="#" id="reset">Clear & start over</a></div>
-  </div>
-</div>
+  <footer>
+    <a href="index.html">Home</a>
+    <a href="book.html">Book</a>
+    <a href="appointments.html">Appointments</a>
+    <a href="preferences.html">Preferences</a>
+  </footer>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const SYNC_URL = "https://ghl-sync.blugritdigital.workers.dev/";
 
+  async function identifyUser() {
+    let email = localStorage.getItem("email") || "";
+    let phone = localStorage.getItem("phone") || "";
 
+    if (!email && !phone) {
+      const usePhone = confirm("Use phone to find your bookings? (Cancel for email)");
+      if (usePhone) {
+        phone = prompt("Enter your phone (digits only):", "");
+        if (phone) localStorage.setItem("phone", phone);
+      } else {
+        email = prompt("Enter your email:", "");
+        if (email) localStorage.setItem("email", email);
+      }
+    }
+    return { email, phone };
+  }
+
+  async function syncData() {
+    const { email, phone } = await identifyUser();
+    const url = new URL(SYNC_URL);
+    if (email) url.searchParams.set("email", email);
+    if (phone) url.searchParams.set("phone", phone);
+
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      const data = await res.json();
+
+      if (!data.contact) {
+        document.getElementById("sub").textContent = "No contact found — check info.";
+        return;
+      }
+
+      const name = [data.contact.firstName, data.contact.lastName].filter(Boolean).join(" ");
+      document.getElementById("name").textContent = name || "Beautiful";
+      document.getElementById("next").textContent = data.upcoming?.[0]
+        ? new Date(data.upcoming[0].startTime).toLocaleString()
+        : "—";
+      document.getElementById("rw").textContent = data.visitCount ?? 0;
+      document.getElementById("sub").textContent = "Synced ✨";
+    } catch (err) {
+      console.error("Sync failed:", err);
+      document.getElementById("sub").textContent = "Could not sync right now.";
+    }
+  }
+
+  // Reset button
+  document.getElementById("reset").addEventListener("click", (e) => {
+    e.preventDefault();
+    localStorage.clear();
+    alert("Data cleared. Reloading...");
+    location.reload();
+  });
+
+  // Start
+  syncData();
+
+  // Register SW for install prompt
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js");
+  }
+});
+</script>
 </body>
 </html>
+
 
 
 
