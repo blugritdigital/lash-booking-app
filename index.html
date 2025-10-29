@@ -2,130 +2,74 @@
 document.addEventListener("DOMContentLoaded", () => {
   const SYNC_URL = "https://ghl-sync.blugritdigital.workers.dev/";
 
+  // ---- helpers ----
+  const el = id => document.getElementById(id);
+  const safeText = (id, txt) => { const e=el(id); if(e) e.textContent = txt; };
+
   let email = localStorage.getItem("email") || "";
   let phone = localStorage.getItem("phone") || "";
-  let fn = localStorage.getItem("fn") || "";
-  let ln = localStorage.getItem("ln") || "";
 
-  function safeSet(id, text) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = text;
-  }
-
-  function setName(n) {
-    safeSet("name", n || "Beautiful");
-  }
-
-  (async function init() {
-    // Prompt user if we have nothing stored
-    if (!email && !phone) {
-      const usePhone = confirm(
-        "Use phone to find your bookings? (Cancel for email)"
-      );
-      if (usePhone) {
-        phone = prompt("Your mobile number (digits only):", "");
-        if (phone) localStorage.setItem("phone", phone);
-      } else {
-        email = prompt("Your email:", "");
-        if (email) localStorage.setItem("email", email);
-      }
-    }
-
-    setName((fn + " " + ln).trim());
-    safeSet("sub", "Syncing your visits…");
-
+  // prompt user once
+  (async function init(){
     try {
+      if(!email && !phone){
+        const usePhone = confirm("Use phone to find your bookings? (Cancel for email)");
+        if(usePhone){
+          phone = prompt("Your mobile number (digits only):","");
+          if(phone) localStorage.setItem("phone", phone);
+        } else {
+          email = prompt("Your email:","");
+          if(email) localStorage.setItem("email", email);
+        }
+      }
+
+      safeText("sub", "Syncing your visits…");
+
       const url = new URL(SYNC_URL);
-      if (email) url.searchParams.set("email", email);
-      if (phone) url.searchParams.set("phone", phone);
+      if(email) url.searchParams.set("email", email);
+      if(phone) url.searchParams.set("phone", phone);
 
-      const res = await fetch(url.toString(), { cache: "no-store" });
-      const text = await res.text();
+      const res = await fetch(url, { cache: "no-store" });
+      const txt = await res.text();
 
-      // Try to parse JSON safely
+      // show raw output if not JSON
       let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
+      try { data = JSON.parse(txt); }
+      catch {
         document.body.innerHTML =
-          "<pre style='padding:20px;background:#fff;border-radius:8px;'>" +
+          "<pre style='white-space:pre-wrap;padding:20px;background:#fff;border-radius:12px;font-size:14px'>" +
           "⚠️ Worker returned non-JSON response:\n\n" +
-          text.replace(/[<>&]/g, c => ({ "<":"&lt;",">":"&gt;","&":"&amp;" }[c])) +
+          txt.replace(/[<>&]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c])) +
           "</pre>";
         return;
       }
 
       console.log("Worker data →", data);
 
-      if (data.error || data.message === "Contact not found") {
-        safeSet("sub", "No contact found — check your email/phone.");
+      if(!data.contact){
+        safeText("sub","No contact found — check your email/phone.");
         return;
       }
 
-      if (data.contact) {
-        localStorage.setItem("cid", data.contact.id);
-        localStorage.setItem("fn", data.contact.firstName || "");
-        localStorage.setItem("ln", data.contact.lastName || "");
-        setName(
-          `${data.contact.firstName || ""} ${data.contact.lastName || ""}`.trim()
-        );
-      }
-
-      // show appointment & visit info
-      const nextAppt = data.upcoming?.[0];
-      safeSet(
-        "next",
-        nextAppt
-          ? new Date(nextAppt.startTime).toLocaleString()
-          : "—"
-      );
-      safeSet("rw", data.visitCount ?? 0);
-
-      safeSet("sub", "Synced ✨");
-    } catch (err) {
-      console.error("Sync error", err);
-      safeSet("sub", "Could not sync right now.");
+      const name = [data.contact.firstName, data.contact.lastName].filter(Boolean).join(" ");
+      safeText("name", name || "Beautiful");
+      const next = data.upcoming?.[0];
+      safeText("next", next ? new Date(next.startTime).toLocaleString() : "—");
+      safeText("rw", data.visitCount ?? 0);
+      safeText("sub","Synced ✨");
+    }
+    catch(err){
+      console.error(err);
+      safeText("sub","Could not sync right now.");
+      // show message box instead of blank
+      document.body.insertAdjacentHTML("beforeend",
+        "<div style='padding:20px;color:#900;background:#fee;margin:20px;border-radius:8px'>"+
+        "⚠️ JS Error: "+err.message+"</div>");
     }
 
-    // install prompt
-    let deferredPrompt;
-    const btn = document.getElementById("install");
-    window.addEventListener("beforeinstallprompt", (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      if (btn) btn.style.display = "inline-block";
-    });
-    if (btn) {
-      btn.addEventListener("click", async () => {
-        if (!deferredPrompt) {
-          alert("Use your browser menu → Add to Home Screen");
-          return;
-        }
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-      });
-    }
-
-    // iOS Add-to-Home hint
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isStandalone =
-      (window.matchMedia &&
-        window.matchMedia("(display-mode: standalone)").matches) ||
-      window.navigator.standalone;
-    if (isIOS && !isStandalone) safeSet("iosHint", "On iPhone: Share → Add to Home Screen");
-
-    const reset = document.getElementById("reset");
-    if (reset)
-      reset.onclick = (e) => {
-        e.preventDefault();
-        localStorage.clear();
-        location.reload();
-      };
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./sw.js");
-    }
+    // safety: ensure reset always works
+    const reset = el("reset");
+    if(reset) reset.onclick = e => { e.preventDefault(); localStorage.clear(); location.reload(); };
   })();
 });
 </script>
