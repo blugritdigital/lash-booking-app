@@ -1,55 +1,103 @@
-<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Preferences</title>
-<style>
-  body{margin:0;font-family:system-ui;background:#F7F4FF}
-  .hdr{background:#7E63C9;color:#fff;padding:14px 16px;font-weight:800;text-align:center}
-  .wrap{padding:10px}
-  iframe{width:100%;height:1200px;border:0;border-radius:16px;box-shadow:0 8px 22px rgba(0,0,0,.12);background:#fff}
-  footer {
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  background: #fff;
-  border-top: 2px solid #EEE6FA;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 10px 0;
-  font-weight: 600;
-  z-index: 10;
-}
-footer a {
-  color: #7E63C9;
-  text-decoration: none;
-  font-size: 15px;
-}
-footer a.active {
-  color: #3A9D23;
-}
-footer a:hover {
-  filter: brightness(1.1);
-}
-body {
-  padding-bottom: 80px; /* so footer doesn’t cover content */
-}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Preferences | Lash Therapy Indy</title>
 
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: #F7F4FF;
+    color: #2B214A;
+    padding-bottom: 90px;
+  }
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 18px;
+    text-align: center;
+  }
+  h1 {
+    font-weight: 800;
+    font-size: clamp(28px, 5vw, 40px);
+    margin: 0 0 8px;
+  }
+  .sub {
+    color: #6a5c93;
+    margin-bottom: 18px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #EEE5FA;
+    border-radius: 20px;
+    box-shadow: 0 6px 20px rgba(126,99,201,.12);
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  iframe {
+    width: 100%;
+    min-height: 900px;
+    border: none;
+    display: block;
+  }
+  footer {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: #fff;
+    border-top: 2px solid #EEE6FA;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px 0;
+    font-weight: 600;
+    z-index: 10;
+  }
+  footer a {
+    color: #7E63C9;
+    text-decoration: none;
+    font-size: 15px;
+  }
+  footer a.active {
+    color: #3A9D23;
+  }
+  footer a:hover {
+    filter: brightness(1.1);
+  }
 </style>
-<div class="hdr">Update Preferences</div>
+</head>
+
+<body>
 <div class="wrap">
-  <!-- paste your GHL form embed link -->
-  <iframe src="https://link.blugritdigital.com/widget/form/ykvS5q7lUAhGedIx0myP"
-    style="width:100%;height:100%;border:none;border-radius:15px"
-    id="inline-ykvS5q7lUAhGedIx0myP" 
-    data-layout="{'id':'INLINE'}"
-    data-trigger-type="alwaysShow"
-    data-trigger-value=""
-    data-activation-type="alwaysActivated"
-    data-activation-value=""
-    data-deactivation-type="neverDeactivate"
-    data-deactivation-value=""
-    data-form-name="Lash Therapy Client Preferences"
-    data-height="855"
-    data-layout-iframe-id="inline-ykvS5q7lUAhGedIx0myP"
-    data-form-id="ykvS5q7lUAhGedIx0myP"
-    title="Lash Therapy Client Preferences"></iframe>
-  <script src="https://link.blugritdigital.com/js/form_embed.js"></script>
+  <h1 id="userName">Update Preferences</h1>
+  <div class="sub">Tell us how you like your lashes — we’ll remember every time 💕</div>
+
+  <div class="card">
+    <!-- Replace the form link below with YOUR GHL form link -->
+    <iframe
+      src="https://link.blugritdigital.com/widget/form/ykvS5q7lUAhGedIx0myP"
+      title="Lash Therapy Preferences Form"
+      id="prefForm"
+      loading="lazy">
+    </iframe>
+  </div>
 </div>
+
+<footer>
+  <a href="index.html">Home</a>
+  <a href="book.html">Book</a>
+  <a href="appointments.html">Appointments</a>
+  <a href="preferences.html" class="active">Preferences</a>
+</footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const fn = localStorage.getItem("fn") || "";
+  const ln = localStorage.getItem("ln") || "";
+  const name = (fn + " " + ln).trim() || "Beautiful";
+  document.getElementById("userName").textContent = `Preferences for ${name}`;
+});
+</script>
+</body>
+</html>
