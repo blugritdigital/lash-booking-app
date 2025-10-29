@@ -1,89 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Lash Therapy – Client App</title>
+<meta name="theme-color" content="#7E63C9"/>
+<style>
+  :root{--purple:#7E63C9;--soft:#F7F4FF;--text:#2B214A;--radius:22px}
+  body{margin:0;background:linear-gradient(180deg,#FBF9FF,#FFF);
+       font-family:system-ui,-apple-system,Segoe UI,Roboto;color:var(--text)}
+  .wrap{max-width:900px;margin:0 auto;padding:32px 18px 80px;text-align:center}
+  h1{font-weight:800;font-size:clamp(28px,5vw,40px);margin:6px 0}
+  .cta{display:flex;flex-direction:column;gap:14px;align-items:center;margin:20px 0}
+  .btn{background:var(--purple);color:#fff;text-decoration:none;
+       padding:14px 28px;border-radius:var(--radius);font-weight:700;
+       box-shadow:0 10px 24px rgba(126,99,201,.25);cursor:pointer}
+  .card{background:#fff;border:1px solid #EEE5FA;border-radius:20px;
+        box-shadow:0 6px 20px rgba(126,99,201,.12);padding:18px;margin-top:14px}
+  .small{color:#6a5c93;font-size:14px}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <h1>Welcome Back <span id="name">Beautiful</span> 💕</h1>
+  <div class="small" id="sub">Syncing your visits…</div>
+
+  <div class="cta">
+    <a id="book" class="btn" href="book.html">Book Now</a>
+    <a id="appts" class="btn" href="appointments.html">My Appointments</a>
+    <a id="prefs" class="btn" href="preferences.html">Update Preferences</a>
+  </div>
+
+  <div class="card">
+    <div><b>Next:</b> <span id="next">—</span></div>
+    <div style="margin-top:6px"><b>Rewards:</b> <span id="rw">0</span> visits</div>
+  </div>
+
+  <div class="card">
+    <div class="small">Add to Home Screen for 1-tap booking.</div>
+    <button id="install" style="display:none;margin-top:8px" class="btn">📲 Install App</button>
+    <div id="iosHint" class="small" style="display:none;margin-top:8px">
+      On iPhone: Share → Add to Home Screen
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="small">Not you? <a href="#" id="reset">Clear & start over</a></div>
+  </div>
+</div>
+
+<!-- 🟣 SCRIPT STARTS HERE -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const SYNC_URL = "https://ghl-sync.blugritdigital.workers.dev/";
 
-  const el = (id) => document.getElementById(id);
+  // Create visible debug box
   const msgBox = document.createElement("div");
   msgBox.style.cssText =
     "position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #ccc;padding:12px;font-family:monospace;font-size:14px;max-height:40vh;overflow:auto;z-index:9999;";
   document.body.appendChild(msgBox);
-  function log(msg, color="#222") {
-    const line = document.createElement("div");
-    line.style.color = color;
-    line.textContent = msg;
-    msgBox.appendChild(line);
-    console.log("[App]", msg);
-  }
+  function log(msg,color="#222"){const l=document.createElement("div");l.style.color=color;l.textContent=msg;msgBox.appendChild(l);console.log("[APP]",msg);}
 
-  async function init() {
-    log("App started");
+  async function init(){
+    log("JS started ✅");
 
-    let email = localStorage.getItem("email") || "";
-    let phone = localStorage.getItem("phone") || "";
-
-    if (!email && !phone) {
-      const usePhone = confirm("Use phone to find your bookings? (Cancel for email)");
-      if (usePhone) {
-        phone = prompt("Enter phone (digits only):", "");
-        if (phone) localStorage.setItem("phone", phone);
+    let email=localStorage.getItem("email")||"", phone=localStorage.getItem("phone")||"";
+    if(!email && !phone){
+      const usePhone=confirm("Use phone to find your bookings? (Cancel for email)");
+      if(usePhone){
+        phone=prompt("Enter phone (digits only):","");
+        if(phone) localStorage.setItem("phone",phone);
       } else {
-        email = prompt("Enter email:", "");
-        if (email) localStorage.setItem("email", email);
+        email=prompt("Enter email:","");
+        if(email) localStorage.setItem("email",email);
       }
     }
-    log(`Using email=${email || "—"}, phone=${phone || "—"}`);
+    log("Using email="+email+", phone="+phone);
 
-    const url = new URL(SYNC_URL);
-    if (email) url.searchParams.set("email", email);
-    if (phone) url.searchParams.set("phone", phone);
-    log("Fetching → " + url);
+    const url=new URL(SYNC_URL);
+    if(email) url.searchParams.set("email",email);
+    if(phone) url.searchParams.set("phone",phone);
+    log("Fetching → "+url);
 
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      log("Response status: " + res.status);
-
-      const text = await res.text();
-      log("Raw response: " + text.slice(0, 300) + (text.length > 300 ? "..." : ""));
+    try{
+      const res=await fetch(url,{cache:"no-store"});
+      log("Response status: "+res.status);
+      const txt=await res.text();
+      log("Raw text (first 300 chars): "+txt.slice(0,300));
 
       let data;
-      try {
-        data = JSON.parse(text);
-      } catch (err) {
-        log("❌ JSON parse error: " + err.message, "red");
-        document.body.innerHTML +=
-          "<pre style='background:#fff;padding:20px;border-radius:12px'>" +
-          text.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])) +
-          "</pre>";
+      try{data=JSON.parse(txt);}catch(e){
+        log("❌ JSON parse error: "+e.message,"red");
+        document.body.innerHTML="<pre style='padding:20px;background:#fff;border-radius:8px;'>"+txt+"</pre>";
         return;
       }
 
-      log("✅ Parsed JSON successfully");
-
-      if (!data.contact) {
-        log("No contact found in data", "red");
-        el("sub")?.textContent = "No contact found — check email/phone.";
+      if(!data.contact){
+        log("No contact found","red");
+        document.getElementById("sub").textContent="No contact found — check your email/phone.";
         return;
       }
 
-      const fullName = [data.contact.firstName, data.contact.lastName].filter(Boolean).join(" ");
-      log("Contact found: " + fullName);
-      el("name")?.textContent = fullName || "Beautiful";
-
-      const nextAppt = data.upcoming?.[0];
-      el("next")?.textContent = nextAppt
-        ? new Date(nextAppt.startTime).toLocaleString()
-        : "—";
-      el("rw")?.textContent = data.visitCount ?? 0;
-      el("sub")?.textContent = "Synced ✨";
-      log("All DOM updates done");
-    } catch (err) {
-      log("❌ JS error: " + err.message, "red");
-      el("sub")?.textContent = "Could not sync right now.";
+      const name=[data.contact.firstName,data.contact.lastName].filter(Boolean).join(" ");
+      document.getElementById("name").textContent=name||"Beautiful";
+      const next=data.upcoming?.[0];
+      document.getElementById("next").textContent=next?new Date(next.startTime).toLocaleString():"—";
+      document.getElementById("rw").textContent=data.visitCount??0;
+      document.getElementById("sub").textContent="Synced ✨";
+      log("✅ Sync complete");
+    }catch(err){
+      log("❌ JS error: "+err.message,"red");
+      document.getElementById("sub").textContent="Could not sync right now.";
     }
+
+    const reset=document.getElementById("reset");
+    if(reset) reset.onclick=(e)=>{e.preventDefault();localStorage.clear();location.reload();};
   }
 
   init();
 });
 </script>
+<!-- 🟣 SCRIPT ENDS HERE -->
+
+</body>
+</html>
+
 
 
