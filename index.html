@@ -1,92 +1,99 @@
 <script>
-const SYNC_URL = 'https://ghl-sync.blugritdigital.workers.dev/';
+document.addEventListener("DOMContentLoaded", () => {
+  const SYNC_URL = 'https://ghl-sync.blugritdigital.workers.dev/';
 
-let email = localStorage.getItem('email') || '';
-let phone = localStorage.getItem('phone') || '';
-let fn = localStorage.getItem('fn') || '';
-let ln = localStorage.getItem('ln') || '';
+  let email = localStorage.getItem('email') || '';
+  let phone = localStorage.getItem('phone') || '';
+  let fn = localStorage.getItem('fn') || '';
+  let ln = localStorage.getItem('ln') || '';
 
-function setName(n) {
-  document.getElementById('name').textContent = n || 'Beautiful';
-}
-
-(async function init() {
-  if (!email && !phone) {
-    const usePhone = confirm('Use phone to find your bookings? (Cancel for email)');
-    if (usePhone) {
-      phone = prompt('Your mobile number (digits only):', '');
-      if (phone) localStorage.setItem('phone', phone);
-    } else {
-      email = prompt('Your email:', '');
-      if (email) localStorage.setItem('email', email);
-    }
+  function setName(n) {
+    const el = document.getElementById('name');
+    if (el) el.textContent = n || 'Beautiful';
   }
 
-  setName((fn + ' ' + ln).trim());
-
-  try {
-    const url = new URL(SYNC_URL);
-    if (email) url.searchParams.set('email', email);
-    if (phone) url.searchParams.set('phone', phone);
-
-    const res = await fetch(url.toString(), { cache: 'no-store' });
-    const data = await res.json();
-
-    if (data.contact) {
-      localStorage.setItem('cid', data.contact.id);
-      localStorage.setItem('fn', data.contact.firstName || '');
-      localStorage.setItem('ln', data.contact.lastName || '');
-      setName(`${data.contact.firstName || ''} ${data.contact.lastName || ''}`.trim());
+  (async function init() {
+    if (!email && !phone) {
+      const usePhone = confirm('Use phone to find your bookings? (Cancel for email)');
+      if (usePhone) {
+        phone = prompt('Your mobile number (digits only):', '');
+        if (phone) localStorage.setItem('phone', phone);
+      } else {
+        email = prompt('Your email:', '');
+        if (email) localStorage.setItem('email', email);
+      }
     }
 
-    const nextAppt = data.upcoming?.[0];
-    document.getElementById('next').textContent = nextAppt
-      ? new Date(nextAppt.startTime).toLocaleString()
-      : '—';
+    setName((fn + ' ' + ln).trim());
 
-    const visits = data.visitCount ?? 0;
-    document.getElementById('rw').textContent = visits;
+    try {
+      const url = new URL(SYNC_URL);
+      if (email) url.searchParams.set('email', email);
+      if (phone) url.searchParams.set('phone', phone);
 
-    document.getElementById('sub').textContent = 'Synced ✨';
-  } catch (e) {
-    console.error(e);
-    document.getElementById('sub').textContent = 'Could not sync right now.';
-  }
+      const res = await fetch(url.toString(), { cache: 'no-store' });
+      if (!res.ok) {
+        const text = await res.text();
+        document.getElementById('sub').textContent = `${res.status}: ${text}`;
+        return;
+      }
+      const data = await res.json();
 
-  // Install prompt (Android & Chrome)
-  let deferredPrompt;
-  const btn = document.getElementById('install');
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    btn.style.display = 'inline-block';
-  });
-  btn.addEventListener('click', async () => {
-    if (!deferredPrompt) {
-      return alert('Use your browser menu → Add to Home Screen');
+      if (data.contact) {
+        localStorage.setItem('cid', data.contact.id);
+        localStorage.setItem('fn', data.contact.firstName || '');
+        localStorage.setItem('ln', data.contact.lastName || '');
+        setName(`${data.contact.firstName || ''} ${data.contact.lastName || ''}`.trim());
+      }
+
+      const nextAppt = data.upcoming?.[0];
+      document.getElementById('next').textContent = nextAppt
+        ? new Date(nextAppt.startTime).toLocaleString()
+        : '—';
+
+      const visits = data.visitCount ?? 0;
+      document.getElementById('rw').textContent = visits;
+
+      document.getElementById('sub').textContent = 'Synced ✨';
+    } catch (e) {
+      console.error(e);
+      document.getElementById('sub').textContent = 'Could not sync right now.';
     }
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-  });
 
-  // iOS Add-to-Home hint
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone =
-    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
-    window.navigator.standalone;
-  if (isIOS && !isStandalone)
-    document.getElementById('iosHint').style.display = 'block';
+    // Install button logic
+    let deferredPrompt;
+    const btn = document.getElementById('install');
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      btn.style.display = 'inline-block';
+    });
+    btn.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        return alert('Use your browser menu → Add to Home Screen');
+      }
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    });
 
-  document.getElementById('reset').onclick = (e) => {
-    e.preventDefault();
-    localStorage.clear();
-    location.reload();
-  };
+    // iOS Add to Home Screen
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone =
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone;
+    if (isIOS && !isStandalone)
+      document.getElementById('iosHint').style.display = 'block';
 
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
-  }
-})();
+    document.getElementById('reset').onclick = (e) => {
+      e.preventDefault();
+      localStorage.clear();
+      location.reload();
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  })();
+});
 </script>
-
