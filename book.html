@@ -1,16 +1,74 @@
-<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Book – Lash Therapy</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Book Your Appointment ✨ | Lash Therapy Indy</title>
+<meta name="theme-color" content="#7E63C9" />
 <style>
-  body{margin:0;font-family:system-ui;background:#F7F4FF}
-  .hdr{background:#7E63C9;color:#fff;padding:14px 16px;font-weight:800;text-align:center}
-  .wrap{padding:10px}
-  iframe{width:100%;height:1200px;border:0;border-radius:16px;box-shadow:0 8px 22px rgba(0,0,0,.12);background:#fff}
+  :root {
+    --purple: #7E63C9;
+    --green: #3A9D23;
+    --text: #2B214A;
+    --radius: 22px;
+  }
+  body {
+    margin: 0;
+    font-family: 'Playfair Display', serif;
+    background: linear-gradient(180deg,#F7F4FF,#FFF);
+    color: var(--text);
+  }
+  .header {
+    background: var(--purple);
+    color: #fff;
+    text-align: center;
+    padding: 18px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    box-shadow: 0 4px 15px rgba(0,0,0,.15);
+  }
+  iframe {
+    width: 100%;
+    height: 1100px;
+    border: none;
+    display: block;
+  }
+  .footer {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: #fff;
+    border-top: 2px solid #EEE6FA;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 10px;
+    font-weight: 600;
+  }
+  .footer a {
+    color: var(--purple);
+    text-decoration: none;
+  }
+  .footer a:hover {
+    color: var(--green);
+  }
 </style>
-<div class="hdr">Book Your Appointment</div>
-<div class="wrap">
-  <iframe id="cal" src=""></iframe>
-</div>
-<script>
-// paste your Services V2 booking link:
-const CAL_URL = 'https://link.blugritdigital.com/booking/bookwithlashtherapyindy;
-</script>
+</head>
+
+<body>
+  <div class="header">Lash Therapy Indy ✨ Book Now</div>
+
+  <iframe
+    src="https://link.blugritdigital.com/booking/bookwithlashtherapyindy?showHeader=true&heightMode=full"
+    title="Lash Therapy Booking"
+  ></iframe>
+
+  <div class="footer">
+    <a href="index.html">Home</a>
+    <a href="appointments.html">My Appointments</a>
+    <a href="preferences.html">Preferences</a>
+  </div>
+
+  <script src="https://link.blugritdigital.com/js/form_embed.js"></script>
+</body>
+</html>
