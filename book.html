@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Book – Lash Therapy</title>
+<style>
+  body{margin:0;font-family:system-ui;background:#F7F4FF}
+  .hdr{background:#7E63C9;color:#fff;padding:14px 16px;font-weight:800;text-align:center}
+  .wrap{padding:10px}
+  iframe{width:100%;height:1200px;border:0;border-radius:16px;box-shadow:0 8px 22px rgba(0,0,0,.12);background:#fff}
+</style>
+<div class="hdr">Book Your Appointment</div>
+<div class="wrap">
+  <iframe id="cal" src=""></iframe>
+</div>
+<script>
+// paste your Services V2 booking link:
+const CAL_URL = 'https://YOUR-GHL-DOMAIN/booking/YOUR-CALENDAR-SLUG?heightMode=full&showHeader=true';
+document.getElementById('cal').src = CAL_URL;
+</script>
