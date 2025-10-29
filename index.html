@@ -47,17 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const nextAppt = data.upcoming?.[0];
-      document.getElementById('next').textContent = nextAppt
-        ? new Date(nextAppt.startTime).toLocaleString()
-        : '—';
-
-      const visits = data.visitCount ?? 0;
-      document.getElementById('rw').textContent = visits;
-
-      document.getElementById('sub').textContent = 'Synced ✨';
+      const subEl = document.getElementById('sub');
+if (subEl)
+  subEl.textContent = 'Synced ✨';
     } catch (e) {
-      console.error(e);
-      document.getElementById('sub').textContent = 'Could not sync right now.';
+      const subErr = document.getElementById('sub');
+if (subErr) subErr.textContent = 'Could not sync right now.';
     }
 
     // Install button logic
