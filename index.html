@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Lash Therapy – Client App</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#7E63C9"/>
+<style>
+  :root{--purple:#7E63C9;--soft:#F7F4FF;--text:#2B214A;--radius:22px}
+  body{margin:0;background:linear-gradient(180deg,#FBF9FF, #FFF);font-family:system-ui,-apple-system,Segoe UI,Roboto;color:var(--text)}
+  .wrap{max-width:900px;margin:0 auto;padding:32px 18px 48px;text-align:center}
+  h1{font-weight:800;font-size:clamp(28px,5vw,40px);margin:6px 0}
+  .cta{display:flex;flex-direction:column;gap:14px;align-items:center;margin:20px 0}
+  .btn{background:var(--purple);color:#fff;text-decoration:none;padding:14px 28px;border-radius:var(--radius);font-weight:700;box-shadow:0 10px 24px rgba(126,99,201,.25)}
+  .card{background:#fff;border:1px solid #EEE5FA;border-radius:20px;box-shadow:0 6px 20px rgba(126,99,201,.12);padding:18px;margin-top:14px}
+  .small{color:#6a5c93;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Welcome Back <span id="name">Beautiful</span> 💕</h1>
+  <div class="small" id="sub">Syncing your visits…</div>
+
+  <div class="cta">
+    <a id="book" class="btn" href="book.html">Book Now</a>
+    <a id="appts" class="btn" href="appointments.html">My Appointments</a>
+    <a id="prefs" class="btn" href="preferences.html">Update Preferences</a>
+  </div>
+
+  <div class="card">
+    <div><b>Next:</b> <span id="next">—</span></div>
+    <div style="margin-top:6px"><b>Rewards:</b> <span id="rw">0</span> visits</div>
+  </div>
+
+  <div class="card">
+    <div class="small">Add to Home Screen for 1-tap booking.</div>
+    <button id="install" style="display:none;margin-top:8px" class="btn">📲 Install App</button>
+    <div id="iosHint" class="small" style="display:none;margin-top:8px">On iPhone: Share → Add to Home Screen</div>
+  </div>
+
+  <div class="card">
+    <div class="small">Not you? <a href="#" id="reset">Clear & start over</a></div>
+  </div>
+</div>
+
+<script>
+// --- config: paste your Worker URL here
+const SYNC_URL = 'https://ghl-sync.YOURNAME.workers.dev'; // ← replace
+
+// identify from last time or prompt once
+let email = localStorage.getItem('email') || '';
+let phone = localStorage.getItem('phone') || '';
+let fn = localStorage.getItem('fn') || '';
+let ln = localStorage.getItem('ln') || '';
+function setName(n){ document.getElementById('name').textContent = n || 'Beautiful'; }
+
+(async function init(){
+  // if we don't know them yet, ask quickly
+  if(!email && !phone){
+    const usePhone = confirm('Use phone to find your bookings? (Cancel for email)');
+    if(usePhone){
+      phone = prompt('Your mobile number (digits only):','');
+      if(phone) localStorage.setItem('phone', phone);
+    } else {
+      email = prompt('Your email:','');
+      if(email) localStorage.setItem('email', email);
+    }
+  }
+  setName((fn + ' ' + ln).trim());
+
+  // sync from Worker
+  try{
+    const url = new URL(SYNC_URL);
+    if(email) url.searchParams.set('email', email);
+    if(phone) url.searchParams.set('phone', phone);
+    const res = await fetch(url.toString(), { cache: 'no-store' });
+    const data = await res.json();
+
+    if(data.cid) localStorage.setItem('cid', data.cid);
+    if(data.na!==undefined){ localStorage.setItem('na', data.na); document.getElementById('next').textContent = data.na || '—'; }
+    if(data.rw!==undefined){ localStorage.setItem('rw', data.rw); document.getElementById('rw').textContent = data.rw; }
+    if(data.pa!==undefined){ localStorage.setItem('pa', data.pa); }
+    document.getElementById('sub').textContent = 'Synced ✨';
+  }catch(e){
+    document.getElementById('sub').textContent = 'Could not sync right now.';
+  }
+
+  // install button (Android & Chrome)
+  let deferredPrompt;
+  const btn = document.getElementById('install');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    btn.style.display = 'inline-block';
+  });
+  btn.addEventListener('click', async () => {
+    if(!deferredPrompt){ return alert('Use your browser menu → Add to Home Screen'); }
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  });
+  // iOS hint
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
+  if(isIOS && !isStandalone) document.getElementById('iosHint').style.display='block';
+
+  // simple nav adds query not needed; pages will read localStorage
+  document.getElementById('reset').onclick = (e)=>{ e.preventDefault(); localStorage.clear(); location.reload(); };
+
+  // register SW for PWA
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js'); }
+})();
+</script>
+</body>
+</html>
