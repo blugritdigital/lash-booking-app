@@ -1,93 +1,130 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const SYNC_URL = 'https://ghl-sync.blugritdigital.workers.dev/';
+  const SYNC_URL = "https://ghl-sync.blugritdigital.workers.dev/";
 
-  let email = localStorage.getItem('email') || '';
-  let phone = localStorage.getItem('phone') || '';
-  let fn = localStorage.getItem('fn') || '';
-  let ln = localStorage.getItem('ln') || '';
+  let email = localStorage.getItem("email") || "";
+  let phone = localStorage.getItem("phone") || "";
+  let fn = localStorage.getItem("fn") || "";
+  let ln = localStorage.getItem("ln") || "";
+
+  function safeSet(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
 
   function setName(n) {
-    const el = document.getElementById('name');
-    if (el) el.textContent = n || 'Beautiful';
+    safeSet("name", n || "Beautiful");
   }
 
   (async function init() {
+    // Prompt user if we have nothing stored
     if (!email && !phone) {
-      const usePhone = confirm('Use phone to find your bookings? (Cancel for email)');
+      const usePhone = confirm(
+        "Use phone to find your bookings? (Cancel for email)"
+      );
       if (usePhone) {
-        phone = prompt('Your mobile number (digits only):', '');
-        if (phone) localStorage.setItem('phone', phone);
+        phone = prompt("Your mobile number (digits only):", "");
+        if (phone) localStorage.setItem("phone", phone);
       } else {
-        email = prompt('Your email:', '');
-        if (email) localStorage.setItem('email', email);
+        email = prompt("Your email:", "");
+        if (email) localStorage.setItem("email", email);
       }
     }
 
-    setName((fn + ' ' + ln).trim());
+    setName((fn + " " + ln).trim());
+    safeSet("sub", "Syncing your visits…");
 
     try {
       const url = new URL(SYNC_URL);
-      if (email) url.searchParams.set('email', email);
-      if (phone) url.searchParams.set('phone', phone);
+      if (email) url.searchParams.set("email", email);
+      if (phone) url.searchParams.set("phone", phone);
 
-      const res = await fetch(url.toString(), { cache: 'no-store' });
-      if (!res.ok) {
-        const text = await res.text();
-        document.getElementById('sub').textContent = `${res.status}: ${text}`;
+      const res = await fetch(url.toString(), { cache: "no-store" });
+      const text = await res.text();
+
+      // Try to parse JSON safely
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        document.body.innerHTML =
+          "<pre style='padding:20px;background:#fff;border-radius:8px;'>" +
+          "⚠️ Worker returned non-JSON response:\n\n" +
+          text.replace(/[<>&]/g, c => ({ "<":"&lt;",">":"&gt;","&":"&amp;" }[c])) +
+          "</pre>";
         return;
       }
-      const data = await res.json();
+
+      console.log("Worker data →", data);
+
+      if (data.error || data.message === "Contact not found") {
+        safeSet("sub", "No contact found — check your email/phone.");
+        return;
+      }
 
       if (data.contact) {
-        localStorage.setItem('cid', data.contact.id);
-        localStorage.setItem('fn', data.contact.firstName || '');
-        localStorage.setItem('ln', data.contact.lastName || '');
-        setName(`${data.contact.firstName || ''} ${data.contact.lastName || ''}`.trim());
+        localStorage.setItem("cid", data.contact.id);
+        localStorage.setItem("fn", data.contact.firstName || "");
+        localStorage.setItem("ln", data.contact.lastName || "");
+        setName(
+          `${data.contact.firstName || ""} ${data.contact.lastName || ""}`.trim()
+        );
       }
 
+      // show appointment & visit info
       const nextAppt = data.upcoming?.[0];
-      const subEl = document.getElementById('sub');
-if (subEl)
-  subEl.textContent = 'Synced ✨';
-    } catch (e) {
-      const subErr = document.getElementById('sub');
-if (subErr) subErr.textContent = 'Could not sync right now.';
+      safeSet(
+        "next",
+        nextAppt
+          ? new Date(nextAppt.startTime).toLocaleString()
+          : "—"
+      );
+      safeSet("rw", data.visitCount ?? 0);
+
+      safeSet("sub", "Synced ✨");
+    } catch (err) {
+      console.error("Sync error", err);
+      safeSet("sub", "Could not sync right now.");
     }
 
-    // Install button logic
+    // install prompt
     let deferredPrompt;
-    const btn = document.getElementById('install');
-    window.addEventListener('beforeinstallprompt', (e) => {
+    const btn = document.getElementById("install");
+    window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      btn.style.display = 'inline-block';
+      if (btn) btn.style.display = "inline-block";
     });
-    btn.addEventListener('click', async () => {
-      if (!deferredPrompt) {
-        return alert('Use your browser menu → Add to Home Screen');
-      }
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-    });
+    if (btn) {
+      btn.addEventListener("click", async () => {
+        if (!deferredPrompt) {
+          alert("Use your browser menu → Add to Home Screen");
+          return;
+        }
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      });
+    }
 
-    // iOS Add to Home Screen
+    // iOS Add-to-Home hint
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     const isStandalone =
-      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      (window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches) ||
       window.navigator.standalone;
-    if (isIOS && !isStandalone)
-      document.getElementById('iosHint').style.display = 'block';
+    if (isIOS && !isStandalone) safeSet("iosHint", "On iPhone: Share → Add to Home Screen");
 
-    document.getElementById('reset').onclick = (e) => {
-      e.preventDefault();
-      localStorage.clear();
-      location.reload();
-    };
+    const reset = document.getElementById("reset");
+    if (reset)
+      reset.onclick = (e) => {
+        e.preventDefault();
+        localStorage.clear();
+        location.reload();
+      };
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js");
     }
   })();
 });
