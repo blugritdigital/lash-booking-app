@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Appointments</title>
+<style>
+  body{margin:0;font-family:system-ui;background:#F7F4FF;color:#2B214A}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 18px}
+  h1{font-weight:800}
+  .card{background:#fff;border:1px solid #EEE5FA;border-radius:20px;box-shadow:0 6px 20px rgba(126,99,201,.12);padding:18px;margin-top:14px}
+  .muted{color:#6a5c93}
+</style>
+<div class="wrap">
+  <h1>Your Appointments</h1>
+  <div class="card"><b>Next:</b> <span id="na">—</span></div>
+  <div class="card">
+    <b>Past Visits</b>
+    <div id="pa" class="muted" style="margin-top:8px">—</div>
+    <div style="margin-top:8px"><b>Reward Visits:</b> <span id="rw">0</span></div>
+  </div>
+</div>
+<script>
+function show(){
+  const na = localStorage.getItem('na') || '';
+  const pa = localStorage.getItem('pa') || '';
+  const rw = localStorage.getItem('rw') || '0';
+  document.getElementById('na').textContent = na || 'No upcoming appointment';
+  document.getElementById('rw').textContent = rw;
+  document.getElementById('pa').innerHTML = pa ? pa.split(' || ').map(x=>`• ${x}`).join('<br>') : 'No past appointments yet';
+}
+show();
+</script>
